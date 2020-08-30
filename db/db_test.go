@@ -1,4 +1,4 @@
-package utils
+package db
 
 import (
 	"database/sql"
@@ -19,12 +19,22 @@ func mockSQLOpen(driver, conn string) (*sql.DB, error) {
 }
 
 type MockDB struct {
-	queryArg string
+	sqlExecArg  string
+	sqlQueryArg string
 }
 
 func (mdb *MockDB) Exec(query string, args ...interface{}) (sql.Result, error) {
-	mdb.queryArg = query
+	mdb.sqlExecArg = query
 	return nil, nil
+}
+
+func (mdb *MockDB) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	mdb.sqlQueryArg = query
+	return nil, nil
+}
+
+func (mdb *MockDB) Close() error {
+	return nil
 }
 
 func TestCreateSQLiteDB(t *testing.T) {
@@ -41,11 +51,11 @@ func TestCreateSQLiteDB(t *testing.T) {
 
 }
 
-func TestRunQuery(t *testing.T) {
+func TestSQLExec(t *testing.T) {
 	want := "SELECT * FROM FOO"
 	mockDB := &MockDB{}
-	RunQuery(want, mockDB)
-	got := mockDB.queryArg
+	SQLExec(want, mockDB)
+	got := mockDB.sqlExecArg
 
 	if got != want {
 		t.Errorf("Expected %q, got %q", want, got)
@@ -56,9 +66,12 @@ func TestCreateTaskTable(t *testing.T) {
 	want := tableCreation
 	mockDB := &MockDB{}
 	CreateTaskTable(mockDB)
-	got := mockDB.queryArg
+	got := mockDB.sqlExecArg
 
 	if got != want {
 		t.Errorf("Expected %q, got %q", want, got)
 	}
+}
+
+func TestGetTasks(t *testing.T) {
 }

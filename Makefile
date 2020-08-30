@@ -4,7 +4,8 @@ test:
 
 .PHONY: build
 build:
-	go build  -o gotodo ./cmd/gotodo
+	mkdir build/
+	go build  -o build/gotodo ./cmd/gotodo
 
 build-verbose:
 	go build -a -x -o gotodo ./cmd/gotodo
@@ -12,3 +13,4 @@ build-verbose:
 clean:
 	find ./ -name "*~" | xargs rm
 	rm -f gotodo
+	rm -rf build

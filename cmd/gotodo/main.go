@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/nakhan98/gotodo/db"
 	"github.com/nakhan98/gotodo/utils"
 	"os/user"
 )
@@ -14,14 +15,16 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
+	var dbConn db.SQLDB
 	dbFilePath := utils.ConstructDBFilePath(curUser, DBFile)
 	if utils.FileExists(dbFilePath) {
 		fmt.Println("DB File exists")
+		dbConn = db.DBOpen(dbFilePath)
 	} else {
 		fmt.Println("DB File does not exist")
-		db := utils.CreateSQLiteDB(dbFilePath, utils.FileCreatorHelper{})
-		utils.CreateTaskTable(db)
-
+		sqliteDB := db.CreateSQLiteDB(dbFilePath, db.FileCreatorHelper{})
+		db.CreateTaskTable(sqliteDB)
+		dbConn = sqliteDB
 	}
+	db.GetTasks(dbConn, true)
 }
