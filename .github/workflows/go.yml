@@ -31,7 +31,7 @@ jobs:
         fi
 
     - name: Build
-      run: make build
+      run: make build-verbose
 
     - name: Test
       run: make test
