@@ -26,5 +26,5 @@ func main() {
 		db.CreateTaskTable(sqliteDB)
 		dbConn = sqliteDB
 	}
-	db.GetTasks(dbConn, true)
+	fmt.Println(db.GetTasks(dbConn, true))
 }

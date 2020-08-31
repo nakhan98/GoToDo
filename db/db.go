@@ -13,9 +13,28 @@ var sqlOpen = sql.Open
 
 type SQLDB interface {
 	Exec(query string, args ...interface{}) (sql.Result, error)
-	Query(query string, args ...interface{}) (*sql.Rows, error)
+	Query(query string, args ...interface{}) (rowScanner, error)
 	Close() error
 }
+
+type rowScanner interface {
+	Next() bool
+	Close() error
+	Scan(...interface{}) error
+}
+
+type sqlWrapper struct {
+	db *sql.DB
+	SQLDB
+}
+
+func (sw *sqlWrapper) Query(query string, args ...interface{}) (rowScanner, error) {
+	return sw.db.Query(query, args...)
+}
+
+// type scanner interface {
+// 	Scan(dest ...interface{}) error
+// }
 
 const tableCreation = `CREATE TABLE Task (
 	"taskID" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -53,7 +72,7 @@ func DBOpen(filepath string) SQLDB {
 	if err != nil {
 		panic(err)
 	}
-	return db
+	return &sqlWrapper{db: db}
 }
 
 func CreateSQLiteDB(filepath string, fc fileCreator) SQLDB {
@@ -63,24 +82,25 @@ func CreateSQLiteDB(filepath string, fc fileCreator) SQLDB {
 	if err != nil {
 		panic(err)
 	}
-	return db
+	return &sqlWrapper{db: db}
 }
 
 func CreateTaskTable(db SQLDB) {
 	SQLExec(tableCreation, db)
 }
 
-func GetTasks(db SQLDB, done bool) {
-	statement := "SELECT taskID, title, done FROM Task WHERE done = ?"
-	// var completeArg int
-	// if completed {
-	// 	completeArg = 1
-	// } else {
-	// 	completeArg = 0
-	// }
+type TaskStruct struct {
+	taskID int
+	title  string
+	done   bool
+}
 
-	// rows, err := db.Query(statement, completeArg)
-	rows, err := db.Query(statement, done)
+const SelectStatement = "SELECT taskID, title, done FROM Task WHERE done = ?"
+
+// Use struct for return val instead
+func GetTasks(db SQLDB, done bool) []TaskStruct {
+	var tasks []TaskStruct
+	rows, err := db.Query(SelectStatement, done)
 
 	if err != nil {
 		panic(err)
@@ -97,5 +117,9 @@ func GetTasks(db SQLDB, done bool) {
 			panic(err)
 		}
 		fmt.Printf("taskID %d, title is %q, done %v\n", taskID, title, done)
+		result := TaskStruct{taskID: taskID, title: title, done: done}
+		tasks = append(tasks, result)
 	}
+
+	return tasks
 }

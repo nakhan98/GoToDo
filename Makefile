@@ -4,7 +4,7 @@ test:
 
 .PHONY: build
 build:
-	mkdir build/
+	mkdir -p build/
 	go build  -o build/gotodo ./cmd/gotodo
 
 build-verbose:
