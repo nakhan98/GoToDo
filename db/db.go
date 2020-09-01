@@ -32,6 +32,14 @@ func (sw *sqlWrapper) Query(query string, args ...interface{}) (rowScanner, erro
 	return sw.db.Query(query, args...)
 }
 
+func (sw *sqlWrapper) Exec(query string, args ...interface{}) (sql.Result, error) {
+	return sw.db.Exec(query, args...)
+}
+
+func (sw *sqlWrapper) Close() error {
+	return sw.db.Close()
+}
+
 // type scanner interface {
 // 	Scan(dest ...interface{}) error
 // }
@@ -76,7 +84,7 @@ func DBOpen(filepath string) SQLDB {
 }
 
 func CreateSQLiteDB(filepath string, fc fileCreator) SQLDB {
-	fmt.Println("Creating sql db at:", filepath)
+	fmt.Println("Creating sqlite db at:", filepath)
 	fc.create(filepath)
 	db, err := sqlOpen("sqlite3", filepath)
 	if err != nil {
@@ -90,9 +98,9 @@ func CreateTaskTable(db SQLDB) {
 }
 
 type TaskStruct struct {
-	taskID int
-	title  string
-	done   bool
+	TaskID int
+	Title  string
+	Done   bool
 }
 
 const SelectStatement = "SELECT taskID, title, done FROM Task WHERE done = ?"
@@ -101,11 +109,11 @@ const SelectStatement = "SELECT taskID, title, done FROM Task WHERE done = ?"
 func GetTasks(db SQLDB, done bool) []TaskStruct {
 	var tasks []TaskStruct
 	rows, err := db.Query(SelectStatement, done)
+	defer rows.Close()
 
 	if err != nil {
 		panic(err)
 	}
-	defer rows.Close()
 
 	for rows.Next() {
 		var (
@@ -116,10 +124,18 @@ func GetTasks(db SQLDB, done bool) []TaskStruct {
 		if err := rows.Scan(&taskID, &title, &done); err != nil {
 			panic(err)
 		}
-		fmt.Printf("taskID %d, title is %q, done %v\n", taskID, title, done)
-		result := TaskStruct{taskID: taskID, title: title, done: done}
+		result := TaskStruct{TaskID: taskID, Title: title, Done: done}
 		tasks = append(tasks, result)
 	}
 
 	return tasks
+}
+
+const InsertStatement = "INSERT INTO Task (title, done) VALUES (?, ?)"
+
+func AddTask(db SQLDB, taskTitle string) {
+	_, err := db.Exec(InsertStatement, taskTitle, false)
+	if err != nil {
+		panic(err)
+	}
 }

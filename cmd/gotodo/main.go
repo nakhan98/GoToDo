@@ -3,28 +3,72 @@ package main
 import (
 	"fmt"
 	"github.com/nakhan98/gotodo/db"
+	"github.com/nakhan98/gotodo/ui"
 	"github.com/nakhan98/gotodo/utils"
-	"os/user"
+	"os"
+	// "os/user"
 )
 
 const DBFile string = ".gotodo.sqlite3"
 
 func main() {
-	fmt.Println("GoToDo")
-	curUser, err := user.Current()
-	if err != nil {
-		panic(err)
+	checkDB()
+	args := os.Args
+
+	dbConn := openDB()
+	defer dbConn.Close()
+
+	if len(args) == 1 {
+		// Just list tasks if no args provided
+		listTasks(dbConn)
+	} else if len(args) == 2 && args[1] == "add" {
+		addTask(dbConn)
 	}
-	var dbConn db.SQLDB
-	dbFilePath := utils.ConstructDBFilePath(curUser, DBFile)
-	if utils.FileExists(dbFilePath) {
-		fmt.Println("DB File exists")
-		dbConn = db.DBOpen(dbFilePath)
+
+	// if utils.FileExists(dbFilePath) {
+	// dbConn = db.DBOpen(dbFilePath)
+	// taskList := db.GetTasks(dbConn, true)
+	// if len(taskList) == 0 {
+	// 	fmt.Println("GoToDo: No tasks found")
+	// } else {
+	// 	ui.PrintTasks(db.GetTasks(dbConn, true))
+	// }
+
+}
+
+func listTasks(dbConn db.SQLDB) {
+	taskList := db.GetTasks(dbConn, false)
+	if len(taskList) == 0 {
+		fmt.Println("GoToDo: No tasks found")
 	} else {
-		fmt.Println("DB File does not exist")
-		sqliteDB := db.CreateSQLiteDB(dbFilePath, db.FileCreatorHelper{})
-		db.CreateTaskTable(sqliteDB)
-		dbConn = sqliteDB
+		ui.PrintTasks(taskList)
 	}
-	fmt.Println(db.GetTasks(dbConn, true))
+}
+
+func addTask(dbConn db.SQLDB) {
+	input := utils.GetTaskTitle()
+	db.AddTask(dbConn, input)
+	fmt.Println("Added task!")
+}
+
+func openDB() db.SQLDB {
+	curUser := utils.GetCurUser()
+	dbFilePath := utils.ConstructDBFilePath(curUser, DBFile)
+	return db.DBOpen(dbFilePath)
+}
+
+// Check if DB exists
+// If not create it
+func checkDB() {
+	curUser := utils.GetCurUser()
+	dbFilePath := utils.ConstructDBFilePath(curUser, DBFile)
+
+	if utils.FileExists(dbFilePath) {
+		return
+	}
+
+	fmt.Println("No sqlite db exists!")
+	dbConn := db.CreateSQLiteDB(dbFilePath, db.FileCreatorHelper{})
+	db.CreateTaskTable(dbConn)
+	defer dbConn.Close()
 }
