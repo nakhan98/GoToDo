@@ -58,7 +58,6 @@ type fileCreator interface {
 type FileCreatorHelper struct{}
 
 func (fc FileCreatorHelper) create(filepath string) {
-	// log.Println("Creating sqlite-database.db...")
 	fh, err := FileCreate(filepath) // Create SQLite file
 	if err != nil {
 		panic(err)
@@ -103,7 +102,7 @@ type TaskStruct struct {
 	Done   bool
 }
 
-const SelectStatement = "SELECT taskID, title, done FROM Task WHERE done = ?"
+const SelectStatement = "SELECT taskID, title, done FROM Task WHERE done = ? ORDER BY taskID DESC"
 
 // Use struct for return val instead
 func GetTasks(db SQLDB, done bool) []TaskStruct {
@@ -131,10 +130,10 @@ func GetTasks(db SQLDB, done bool) []TaskStruct {
 	return tasks
 }
 
-const InsertStatement = "INSERT INTO Task (title, done) VALUES (?, ?)"
+const InsertStatement = "INSERT INTO Task (title, datetime, done) VALUES (?, ?, ?)"
 
-func AddTask(db SQLDB, taskTitle string) {
-	_, err := db.Exec(InsertStatement, taskTitle, false)
+func AddTask(db SQLDB, taskTitle string, datetime string) {
+	_, err := db.Exec(InsertStatement, taskTitle, datetime, false)
 	if err != nil {
 		panic(err)
 	}

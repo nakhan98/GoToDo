@@ -47,7 +47,8 @@ func listTasks(dbConn db.SQLDB) {
 
 func addTask(dbConn db.SQLDB) {
 	input := utils.GetTaskTitle()
-	db.AddTask(dbConn, input)
+	datetimeStr := utils.GetTime()
+	db.AddTask(dbConn, input, datetimeStr)
 	fmt.Println("Added task!")
 }
 

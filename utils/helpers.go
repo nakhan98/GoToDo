@@ -6,7 +6,16 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"time"
 )
+
+func GetTime() string {
+	t := time.Now()
+	formatted := fmt.Sprintf("%d-%02d-%02dT%02d:%02d:%02d",
+		t.Year(), t.Month(), t.Day(),
+		t.Hour(), t.Minute(), t.Second())
+	return formatted
+}
 
 func GetTaskTitle() string {
 	scanner := bufio.NewScanner(os.Stdin)

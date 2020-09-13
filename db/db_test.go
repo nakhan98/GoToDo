@@ -2,7 +2,7 @@ package db
 
 import (
 	"database/sql"
-	// "fmt"
+	"fmt"
 	"reflect"
 	"testing"
 )
@@ -21,16 +21,21 @@ func mockSQLOpen(driver, conn string) (*sql.DB, error) {
 
 type MockDB struct {
 	sqlExecArg  string
-	sqlQueryArg string
+	sqlExecArgs []interface{}
+
+	sqlQueryArg  string
+	sqlQueryArgs []interface{}
 }
 
 func (mdb *MockDB) Exec(query string, args ...interface{}) (sql.Result, error) {
 	mdb.sqlExecArg = query
+	mdb.sqlExecArgs = args
 	return nil, nil
 }
 
 func (mdb *MockDB) Query(query string, args ...interface{}) (rowScanner, error) {
 	mdb.sqlQueryArg = query
+	mdb.sqlQueryArgs = args
 	return &mockRowScanner{rows: 1}, nil
 }
 
@@ -123,5 +128,17 @@ func TestGetTasks(t *testing.T) {
 	if mockDB.sqlQueryArg != SelectStatement {
 		t.Errorf("Got %v, expected %v", mockDB.sqlQueryArg, SelectStatement)
 	}
+
+}
+
+func TestAddTask(t *testing.T) {
+	mockDB := &MockDB{}
+	AddTask(mockDB, "Test title", "2020")
+
+	if mockDB.sqlExecArg != InsertStatement {
+		t.Errorf("Got %v, expected %v", mockDB.sqlExecArg, InsertStatement)
+	}
+
+	fmt.Println(mockDB.sqlExecArgs)
 
 }
